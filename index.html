@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard Pendaftaran Siswa (Modern)</title>
+    <!-- 
+      Anda harus memiliki file style.css di folder yang sama.
+      Saya akan menyertakan style modal di file ini untuk kemudahan.
+    -->
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <style>
+        /* CSS tambahan untuk loading */
+        .loading { display: none; color: #888; }
+
+        /* ---------------- */
+        /* STYLE MODAL EDIT */
+        /* ---------------- */
+
+        /* Latar belakang gelap di belakang modal */
+        .modal-overlay {
+          display: none; /* Sembunyi by default */
+          position: fixed; /* Tetap di tempat saat scroll */
+          z-index: 1000;
+          left: 0;
+          top: 0;
+          width: 100%;
+          height: 100%;
+          overflow: auto; /* Bisa di-scroll jika konten panjang */
+          background-color: rgba(0,0,0,0.5); /* Hitam transparan */
+        }
+
+        /* Kotak modalnya */
+        .modal-content {
+          background-color: #fefefe;
+          margin: 10% auto; /* 10% dari atas dan tengah secara horizontal */
+          padding: 25px;
+          border: 1px solid #888;
+          width: 80%;
+          max-width: 600px; /* Batas lebar maksimum */
+          border-radius: 8px;
+          position: relative;
+          box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        /* Tombol close (X) */
+        .close-button {
+          color: #aaa;
+          position: absolute;
+          top: 10px;
+          right: 20px;
+          font-size: 28px;
+          font-weight: bold;
+          cursor: pointer;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+          color: black;
+          text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <!-- =================================== -->
+        <!--     BAGIAN FORMULIR PENDAFTARAN     -->
+        <!-- =================================== -->
+        <header>
+            <h3>Formulir Pendaftaran Siswa Baru</h3>
+        </header>
+        
+        <form id="form-daftar">
+            <fieldset>
+                <div class="form-group">
+                    <label for="nama">Nama: </label>
+                    <input type="text" name="nama" placeholder="nama lengkap" required />
+                </div>
+                <div class="form-group">
+                    <label for="alamat">Alamat: </label>
+                    <textarea name="alamat" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Jenis Kelamin: </label>
+                    <label><input type="radio" name="jenis_kelamin" value="laki-laki" required> Laki-laki</label>
+                    <label><input type="radio" name="jenis_kelamin" value="perempuan"> Perempuan</label>
+                </div>
+                <div class="form-group">
+                    <label for="agama">Agama: </label>
+                    <!-- Daftar agama yang sudah diperbarui -->
+                    <select name="agama" required>
+                        <option value="">-- Pilih Agama --</option>
+                        <option value="Islam">Islam</option>
+                        <option value="Kristen Protestan">Kristen Protestan</option>
+                        <option value="Katolik">Katolik</option>
+                        <option value="Hindu">Hindu</option>
+                        <option value="Buddha">Buddha</option>
+                        <option value="Khonghucu">Khonghucu</option>
+                        <option value="Lainnya">Kepercayaan Lainnya</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="sekolah_asal">Sekolah Asal: </label>
+                    <input type="text" name="sekolah_asal" placeholder="nama sekolah" required />
+                </div>
+                <p>
+                    <input type="submit" value="Daftar" name="daftar" />
+                </p>
+                <!-- Untuk pesan status sukses/gagal -->
+                <p id="form-status" style="font-weight: bold;"></p> 
+            </fieldset>
+        </form>
+
+        <hr style="margin: 30px 0;">
+
+        <!-- =================================== -->
+        <!--        BAGIAN DAFTAR SISWA          -->
+        <!-- =================================== -->
+        <header>
+            <h3>Siswa yang sudah mendaftar</h3>
+        </header>
+        
+        <p class="loading" id="loading-indicator">Memuat data...</p>
+
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Nama</th>
+                    <th>Alamat</th>
+                    <th>Jenis Kelamin</th>
+                    <th>Agama</th>
+                    <th>Sekolah Asal</th>
+                    <th>Tindakan</th>
+                </tr>
+            </thead>
+            <!-- Isi tabel akan diisi oleh JavaScript -->
+            <tbody id="siswa-table-body">
+                <!-- Data akan muncul di sini -->
+            </tbody>
+        </table>
+        
+    </div>
+
+    <!-- =================================== -->
+    <!--       MODAL UNTUK EDIT SISWA        -->
+    <!-- =================================== -->
+    <div id="edit-modal" class="modal-overlay">
+        <div class="modal-content">
+            <!-- Tombol 'X' untuk menutup -->
+            <span class="close-button" onclick="tutupEditModal()">&times;</span>
+            
+            <header>
+                <h3>Formulir Edit Siswa</h3>
+            </header>
+            
+            <form id="form-edit">
+                <fieldset>
+                    <!-- Input tersembunyi untuk menyimpan ID siswa -->
+                    <input type="hidden" name="id" id="edit-id">
+                
+                    <div class="form-group">
+                        <label for="edit-nama">Nama: </label>
+                        <input type="text" name="nama" id="edit-nama" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-alamat">Alamat: </label>
+                        <textarea name="alamat" id="edit-alamat" required></textarea>
+                    </div>
+                    <div class="form-group" id="edit-grup-jk">
+                        <label>Jenis Kelamin: </label>
+                        <label><input type="radio" name="jenis_kelamin" id="edit-jk-laki" value="laki-laki" required> Laki-laki</label>
+                        <label><input type="radio" name="jenis_kelamin" id="edit-jk-perempuan" value="perempuan"> Perempuan</label>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-agama">Agama: </label>
+                        <select name="agama" id="edit-agama" required>
+                            <option value="">-- Pilih Agama --</option>
+                            <option value="Islam">Islam</option>
+                            <option value="Kristen Protestan">Kristen Protestan</option>
+                            <option value="Katolik">Katolik</option>
+                            <option value="Hindu">Hindu</option>
+                            <option value="Buddha">Buddha</option>
+                            <option value="Khonghucu">Khonghucu</option>
+                            <option value="Lainnya">Kepercayaan Lainnya</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-sekolah">Sekolah Asal: </label>
+                        <input type="text" name="sekolah_asal" id="edit-sekolah" required />
+                    </div>
+                    <p>
+                        <input type="submit" value="Simpan Perubahan" name="simpan" />
+                    </p>
+                    <p id="edit-form-status" style="font-weight: bold;"></p> <!-- Untuk pesan status edit -->
+                </fieldset>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- =================================== -->
+    <!--     'OTAK' APLIKASI (JAVASCRIPT)      -->
+    <!-- =================================== -->
+    <script>
+        
+        // --- 1. AMBIL ELEMEN-ELEMEN PENTING ---
+        const form = document.getElementById('form-daftar');
+        const tableBody = document.getElementById('siswa-table-body');
+        const loading = document.getElementById('loading-indicator');
+        const formStatus = document.getElementById('form-status');
+
+        // Elemen untuk Modal Edit
+        const modal = document.getElementById('edit-modal');
+        const formEdit = document.getElementById('form-edit');
+        const editFormStatus = document.getElementById('edit-form-status');
+
+        
+        // --- 2. FUNGSI UNTUK MEMUAT DATA SISWA (READ) ---
+        async function muatDataSiswa() {
+            loading.style.display = 'block'; // Tampilkan "Memuat data..."
+            tableBody.innerHTML = ''; // Kosongkan tabel
+            
+            try {
+                // Panggil API back-end (api-list.php)
+                const response = await fetch('api-list.php'); 
+                const dataSiswa = await response.json();
+
+                if (dataSiswa.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Belum ada pendaftar.</td></tr>';
+                } else {
+                    // Loop setiap data siswa dan buat baris tabel (tr)
+                    dataSiswa.forEach(siswa => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${siswa.id}</td>
+                            <td>${siswa.nama}</td>
+                            <td>${siswa.alamat}</td>
+                            <td>${siswa.jenis_kelamin}</td>
+                            <td>${siswa.agama}</td>
+                            <td>${siswa.sekolah_asal}</td>
+                            <td>
+                                <!-- Tombol Edit (onclick diperbarui) -->
+                                <a href="#" class="edit" onclick="bukaEditModal(${siswa.id})">Edit</a> 
+                                <!-- Tombol Hapus ( | dihilangkan) -->
+                                <a href="#" class="hapus" onclick="hapusSiswa(${siswa.id}, '${siswa.nama}')">Hapus</a>
+                            </td>
+                        `;
+                        tableBody.appendChild(tr); // Masukkan baris ke tabel
+                    });
+                }
+
+            } catch (error) {
+                // Tampilkan error jika fetch gagal (misal: error 500)
+                tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: red;">Gagal memuat data: ${error.message}</td></tr>`;
+            } finally {
+                loading.style.display = 'none'; // Sembunyikan "Memuat data..."
+            }
+        }
+
+        // --- 3. FUNGSI UNTUK MENDAFTAR SISWA (CREATE) ---
+        async function handleFormSubmit(event) {
+            event.preventDefault(); // Mencegah form 'refresh' halaman
+            formStatus.textContent = 'Mengirim data...';
+            formStatus.style.color = '#555';
+            
+            const formData = new FormData(form);
+            
+            // PERBAIKAN: "Akses Dilarang"
+            // Kirim 'daftar' secara manual agar if(isset($_POST['daftar'])) di PHP TRUE
+            formData.append('daftar', 'true');
+            
+            try {
+                // Kirim data ke API pendaftaran (proses-pendaftaran.php)
+                const response = await fetch('proses-pendaftaran.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (result.status === 'sukses') {
+                    formStatus.textContent = result.message;
+                    formStatus.style.color = 'green';
+                    form.reset(); // Kosongkan form
+                    muatDataSiswa(); // Muat ulang data di tabel
+                } else {
+                    formStatus.textContent = result.message;
+                    formStatus.style.color = 'red';
+                }
+                
+            } catch (error) {
+                formStatus.textContent = 'Terjadi error: ' + error.message;
+                formStatus.style.color = 'red';
+            }
+        }
+        
+        // --- 4. FUNGSI UNTUK MENGHAPUS SISWA (DELETE) ---
+        async function hapusSiswa(id, nama) {
+            // Gunakan konfirmasi browser
+            if (!confirm(`Apakah Anda yakin ingin menghapus ${nama}?`)) {
+                return; // Batal jika pengguna menekan 'Cancel'
+            }
+
+            try {
+                // Panggil API hapus (api-hapus.php)
+                const response = await fetch(`api-hapus.php?id=${id}`);
+                const result = await response.json();
+
+                if (result.status === 'sukses') {
+                    alert(result.message); // Tampilkan popup sukses
+                    muatDataSiswa(); // Muat ulang data di tabel
+                } else {
+                    alert(result.message); // Tampilkan popup error
+                }
+
+            } catch (error) {
+                alert('Gagal menghapus: ' + error.message);
+            }
+        }
+
+        // --- 5. FUNGSI UNTUK MEMBUKA MODAL EDIT (UPDATE) ---
+        async function bukaEditModal(id) {
+            editFormStatus.textContent = 'Memuat data...';
+            editFormStatus.style.color = '#555';
+            modal.style.display = 'block'; // Tampilkan modal
+            
+            try {
+                // Panggil API untuk ambil data 1 siswa (api-get-siswa.php)
+                const response = await fetch(`api-get-siswa.php?id=${id}`);
+                const result = await response.json();
+
+                if (result.status === 'sukses') {
+                    const siswa = result.data;
+                    
+                    // Isi formulir modal dengan data siswa
+                    document.getElementById('edit-id').value = siswa.id;
+                    document.getElementById('edit-nama').value = siswa.nama;
+                    document.getElementById('edit-alamat').value = siswa.alamat;
+                    document.getElementById('edit-agama').value = siswa.agama;
+                    document.getElementById('edit-sekolah').value = siswa.sekolah_asal;
+                    
+                    // Logika khusus untuk radio button Jenis Kelamin
+                    if (siswa.jenis_kelamin === 'laki-laki') {
+                        document.getElementById('edit-jk-laki').checked = true;
+                    } else if (siswa.jenis_kelamin === 'perempuan') {
+                        document.getElementById('edit-jk-perempuan').checked = true;
+                    }
+                    
+                    editFormStatus.textContent = ''; // Kosongkan status
+                } else {
+                    editFormStatus.textContent = 'Gagal memuat data: ' + result.message;
+                    editFormStatus.style.color = 'red';
+                }
+            } catch (error) {
+                editFormStatus.textContent = 'Error: ' + error.message;
+                editFormStatus.style.color = 'red';
+            }
+        }
+
+        // --- 6. FUNGSI UNTUK MENUTUP MODAL EDIT ---
+        function tutupEditModal() {
+            modal.style.display = 'none'; // Sembunyikan modal
+            formEdit.reset(); // Kosongkan form edit
+            editFormStatus.textContent = ''; // Kosongkan status
+        }
+
+        // --- 7. FUNGSI UNTUK SUBMIT DATA EDIT (UPDATE) ---
+        async function handleEditSubmit(event) {
+            event.preventDefault(); // Mencegah refresh
+            editFormStatus.textContent = 'Menyimpan...';
+            editFormStatus.style.color = '#555';
+
+            const formData = new FormData(formEdit);
+            
+            // Pastikan 'simpan' terkirim agar if(isset($_POST['simpan'])) di PHP TRUE
+            formData.append('simpan', 'true'); 
+
+            try {
+                // Kirim data ke API edit (proses-edit.php)
+                const response = await fetch('proses-edit.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (result.status === 'sukses') {
+                    editFormStatus.textContent = result.message;
+                    editFormStatus.style.color = 'green';
+                    
+                    // Muat ulang data tabel dan tutup modal setelah 1 detik
+                    setTimeout(() => {
+                        tutupEditModal();
+                        muatDataSiswa(); 
+                    }, 1000);
+                    
+                } else {
+                    editFormStatus.textContent = result.message;
+                    editFormStatus.style.color = 'red';
+                }
+            } catch (error) {
+                editFormStatus.textContent = 'Error: ' + error.message;
+                editFormStatus.style.color = 'red';
+            }
+        }
+
+
+        // --- 8. JALANKAN SAAT HALAMAN DIBUKA ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Langsung muat data siswa saat halaman dibuka
+            muatDataSiswa(); 
+            
+            // Pasang 'listener' di form pendaftaran
+            form.addEventListener('submit', handleFormSubmit); 
+            
+            // Pasang 'listener' di form edit
+            formEdit.addEventListener('submit', handleEditSubmit);
+        });
+
+    </script>
+</body>
+</html>
