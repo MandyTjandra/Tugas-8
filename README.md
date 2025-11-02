@@ -6,7 +6,7 @@
 
 Anda dapat mengakses dan mencoba aplikasi versi baru (Single Page App) ini secara langsung melalui tautan berikut:
 
-**[https://mandytjandra.infinityfreeapp.com/index.html](https://mandytjandratugas8.infinityfreeapp.com/)**
+**[Klik disini](https://mandytjandratugas8.infinityfreeapp.com/)**
 
 ---
 
